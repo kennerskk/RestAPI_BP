@@ -1,5 +1,5 @@
 import express from 'express';
-import Stat from '../models/Stat.js';
+import Stat from '../models/stat_schema.js';
 
 const router = express.Router();
 
