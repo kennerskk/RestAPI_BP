@@ -1,4 +1,4 @@
-import Stat from '../models/Stat.js';
+import Stat from '../models/stat.js';
 
 // Create or update by timestamp
 export const createOrUpdateStat = async (req, res) => {
