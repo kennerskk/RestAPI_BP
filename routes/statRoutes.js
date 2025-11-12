@@ -6,26 +6,30 @@ const router = express.Router();
 // ✅ POST /api/stat/add — เพิ่มข้อมูลใหม่
 router.post('/add', async (req, res) => {
   try {
-    const { timestamp, topic_name, data } = req.body;
+    const { timestamp, value, topic_name, experiment_id, session_id, data } = req.body;
 
-    if (!timestamp || !data) {
-      return res.status(400).json({ error: 'Missing timestamp or data' });
+    if (!timestamp) {
+      return res.status(400).json({ error: 'Missing timestamp' });
     }
 
     const newStat = new Stat({
       timestamp,
+      value,
       topic_name,
-      data,
+      experiment_id,
+      session_id,
+      data
     });
 
     await newStat.save();
 
-    res.status(200).json({ message: 'Stat added', stat: newStat });
+    res.status(201).json({ message: 'Stat added', stat: newStat });
   } catch (error) {
     console.error('Error adding stat:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 // ✅ GET /api/stat — ดึงข้อมูลทั้งหมด
