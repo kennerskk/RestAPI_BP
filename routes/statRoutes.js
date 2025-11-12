@@ -20,7 +20,7 @@ router.post('/add', async (req, res) => {
 
     await newStat.save();
 
-    res.status(201).json({ message: 'Stat added', stat: newStat });
+    res.status(200).json({ message: 'Stat added', stat: newStat });
   } catch (error) {
     console.error('Error adding stat:', error);
     res.status(500).json({ error: 'Internal Server Error' });
