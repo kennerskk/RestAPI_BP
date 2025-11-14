@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 const StatSchema = new mongoose.Schema(
   {},
-  { strict: false, timestamps: true } 
+  { strict: false,  } 
 );
 
 const Stat = mongoose.model('Stat', StatSchema, 'stat');
