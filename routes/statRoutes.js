@@ -1,6 +1,7 @@
 // routes/statRoutes.js
 import express from 'express';
 import Stat from '../models/stat_schema.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,7 +19,8 @@ router.post('/add', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+// Protect this route with auth middleware
+router.get('/', protect, async (req, res) => {
   try {
     const stats = await Stat.find().sort({ createdAt: -1 });
     res.json(stats);
