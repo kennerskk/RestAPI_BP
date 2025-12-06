@@ -1,10 +1,10 @@
 import express from 'express';
-import mongoose from 'mongoose';
+import { Sequelize } from 'sequelize'; // นำเข้า Sequelize แทน
 import cors from 'cors';
 import dotenv from 'dotenv';
 import statRoutes from './routes/statRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import User from './models/user_schema.js';
+import User, { initUserModel, createAdminUser } from './models/user_schema.js'; // ปรับการ Import
 
 dotenv.config();
 
@@ -13,59 +13,56 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
+// ใช้ DATABASE_URL แทน MONGO_URI
+const DATABASE_URL = process.env.DATABASE_URL; 
 
-if (!MONGO_URI) {
-  console.error('❌ MONGO_URI not set. Copy .env.example to .env and set MONGO_URI');
-  process.exit(1);
+if (!DATABASE_URL) {
+    console.error('❌ DATABASE_URL not set in environment.');
+    process.exit(1);
 }
 
-// Connect to MongoDB
-mongoose.connect(MONGO_URI, {
-  // useNewUrlParser and useUnifiedTopology are default in modern mongoose
-})  
-.then(() => {
-  console.log('✅ Connected to MongoDB');
-  // Create admin user if not exists
-  const createAdmin = async () => {
-    try {
-      const adminUsername = process.env.ADMIN_USERNAME;
-      const adminPassword = process.env.ADMIN_PASSWORD;
-
-      if (!adminUsername || !adminPassword) {
-        console.log('🟠 ADMIN_USERNAME or ADMIN_PASSWORD not set. Skipping admin creation.');
-        return;
-      }
-
-      const existingAdmin = await User.findOne({ username: adminUsername });
-      if (!existingAdmin) {
-        const adminUser = new User({
-          username: adminUsername,
-          password: adminPassword, // Password will be hashed by the 'pre-save' hook in the model
-        });
-        await adminUser.save();
-        console.log('✅ Admin user created');
-      } else {
-        console.log('ℹ️ Admin user already exists');
-      }
-    } catch (error) {
-      console.error('❌ Error creating admin user:', error);
-    }
-  };
-  createAdmin();
-})
-.catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-  process.exit(1);
+// 1. สร้าง Sequelize Instance
+const sequelize = new Sequelize(DATABASE_URL, {
+    dialect: 'postgres',
+    logging: false, // ปิดการแสดงผล SQL queries
 });
 
+// 2. Initialise Models (เรียกใช้งาน Sequelize Models)
+// ส่ง Instance ของ Sequelize เข้าไปในไฟล์ Model เพื่อกำหนดตาราง
+initUserModel(sequelize); 
+// **สมมติว่าคุณมี initStatModel(sequelize) ใน stat_schema.js ด้วย**
+// initStatModel(sequelize); 
+
+
+const connectDB = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Connected to PostgreSQL');
+
+        // สำคัญ: ซิงค์ตารางทั้งหมด (Sequelize จะสร้างตารางตาม Models หากยังไม่มี)
+        // force: false หมายถึงไม่ลบตารางเดิมทิ้ง (ปลอดภัย)
+        await sequelize.sync({ force: false }); 
+        console.log('✅ All models were synchronized successfully.');
+
+        // 3. Logic สร้าง Admin User
+        await createAdminUser(); 
+
+    } catch (error) {
+        console.error('❌ PostgreSQL connection or synchronization error:', error.message);
+        process.exit(1);
+    }
+};
+
+connectDB();
+
 // Routes
+// Note: ต้องมั่นใจว่า Routes และ Controllers ถูกปรับให้ใช้ Sequelize API แทน Mongoose API แล้ว
 app.use('/api/stat', statRoutes);
 app.use('/api/auth', authRoutes);
 
 // Health
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT,'0.0.0.0', () => {
-  console.log(`🚀 Server listening on port${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server listening on port ${PORT}`);
 });

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # 1. Database Service (PostgreSQL)
+  db_my: # เปลี่ยน Service Name เพื่อความเป็นเอกลักษณ์
+    image: postgres:14-alpine 
+    container_name: bp_postgres_my # เปลี่ยน Container Name
+    restart: unless-stopped
+    env_file:
+      - ./postgres.env 
+    volumes:
+      # Volume ที่ใช้ต้องตรงกับชื่อที่กำหนดไว้ด้านล่าง (bp_data_my)
+      - bp_data_my:/var/lib/postgresql/data/pgdata 
+    # ไม่มี ports: เพื่อความปลอดภัย ไม่ชนกับ 5432 บน Host
+
+  # 2. Backend Service (Node.js API)
+  web_my: # เปลี่ยน Service Name เพื่อความเป็นเอกลักษณ์
+    build: . 
+    container_name: bp_backend_my # เปลี่ยน Container Name
+    restart: unless-stopped
+    ports:
+      # ใช้ 9000:3000 เพื่อหลีกเลี่ยงการชนกับพอร์ต 80 และ 3000
+      - "9000:3000" 
+    environment:
+      # **DATABASE_URL (ถูกต้อง):** Hostname ต้องชี้ไปที่ชื่อ Service ใหม่คือ 'db_my'
+      DATABASE_URL: postgres://ken:3111ken!@db_my:5432/bp_dashboard_db
+      PORT: 3000 
+      JWT_SECRET: your_super_secret_jwt_key
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: your_strong_password_here
+    depends_on:
+      - db_my # ต้องชี้ไปที่ชื่อ Service ใหม่
+
+volumes:
+  # ชื่อ Volume ที่ใช้สำหรับ DB
+  bp_data_my:
