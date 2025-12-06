@@ -1,10 +1,17 @@
 import express from 'express';
-import { Sequelize } from 'sequelize'; // นำเข้า Sequelize แทน
+import { Sequelize } from 'sequelize';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Import Routes
 import statRoutes from './routes/statRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import User, { initUserModel, createAdminUser } from './models/user_schema.js'; // ปรับการ Import
+
+// Import Models และ Init Functions
+// (User ยังคงใช้ import แบบเดิมตามที่คุณมี)
+import User, { initUserModel, createAdminUser } from './models/user_schema.js'; 
+// 👉 Import initStatModel เข้ามา (ไม่ต้อง import Stat ที่นี่เพราะไม่ได้ใช้โดยตรง)
+import { initStatModel } from './models/stat_schema.js'; 
 
 dotenv.config();
 
@@ -13,54 +20,51 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-// ใช้ DATABASE_URL แทน MONGO_URI
-const DATABASE_URL = process.env.DATABASE_URL; 
+const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
-    console.error('❌ DATABASE_URL not set in environment.');
+    console.error('❌ DATABASE_URL not set.');
     process.exit(1);
 }
 
 // 1. สร้าง Sequelize Instance
 const sequelize = new Sequelize(DATABASE_URL, {
     dialect: 'postgres',
-    logging: false, // ปิดการแสดงผล SQL queries
+    logging: false, // ปิดการแสดงผล SQL queries ใน log (เปิดเป็น true ถ้าต้องการ debug)
 });
 
-// 2. Initialise Models (เรียกใช้งาน Sequelize Models)
-// ส่ง Instance ของ Sequelize เข้าไปในไฟล์ Model เพื่อกำหนดตาราง
+// 2. Initialize Models (จุดสำคัญ! ต้องทำก่อน connectDB)
+// ส่ง sequelize instance เข้าไปเพื่อให้ Model ทำงานได้และตัวแปร Stat ได้รับค่า
 initUserModel(sequelize); 
-// **สมมติว่าคุณมี initStatModel(sequelize) ใน stat_schema.js ด้วย**
-// initStatModel(sequelize); 
-
+initStatModel(sequelize); // <--- ต้องเรียกตรงนี้ Stat ถึงจะไม่ undefined ใน Routes
 
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ Connected to PostgreSQL');
 
-        // สำคัญ: ซิงค์ตารางทั้งหมด (Sequelize จะสร้างตารางตาม Models หากยังไม่มี)
-        // force: false หมายถึงไม่ลบตารางเดิมทิ้ง (ปลอดภัย)
+        // Sync ตาราง (สร้างตารางถ้ายังไม่มี)
+        // force: false หมายถึงข้อมูลเก่าจะไม่หาย
         await sequelize.sync({ force: false }); 
         console.log('✅ All models were synchronized successfully.');
 
-        // 3. Logic สร้าง Admin User
+        // สร้าง Admin (ถ้ามี logic นี้)
         await createAdminUser(); 
 
     } catch (error) {
-        console.error('❌ PostgreSQL connection or synchronization error:', error.message);
+        console.error('❌ Database connection error:', error.message);
         process.exit(1);
     }
 };
 
+// เริ่มเชื่อมต่อ Database
 connectDB();
 
-// Routes
-// Note: ต้องมั่นใจว่า Routes และ Controllers ถูกปรับให้ใช้ Sequelize API แทน Mongoose API แล้ว
+// 3. ใช้งาน Routes
 app.use('/api/stat', statRoutes);
 app.use('/api/auth', authRoutes);
 
-// Health
+// Health Check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
 app.listen(PORT, '0.0.0.0', () => {
