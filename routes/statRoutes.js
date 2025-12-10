@@ -1,6 +1,7 @@
 import express from 'express';
 // 👉 สำคัญ: Import แบบ Named Import { Stat } (มีปีกกา) เพื่อให้ได้รับค่าตัวแปรที่อัปเดตแล้วจาก Model
 import { Stat } from '../models/stat_schema.js';
+import { Op } from 'sequelize'; 
 import { protect } from '../middleware/authMiddleware.js'; // เปิดใช้ถ้าต้องการ Auth Middleware
 
 const router = express.Router();
@@ -51,5 +52,50 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }); 
+
+router.delete('/delete-session', async (req, res) => {
+  try {
+    // รับค่าจาก Body
+    const { session_id, experiment_id } = req.body;
+
+    // เช็คว่าส่งค่ามาครบไหม
+    if (session_id === undefined || experiment_id === undefined) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: session_id and experiment_id are required.' 
+      });
+    }
+
+    if (!Stat) {
+        throw new Error('Stat model has not been initialized in server.js');
+    }
+
+    // 🔥 คำสั่งลบ: ใช้ Op.contains เพื่อหาว่าแถวไหนมี JSON หน้าตาแบบนี้บ้าง
+    const deletedCount = await Stat.destroy({
+      where: {
+        data: {
+          [Op.contains]: {
+            // ต้องแปลงเป็น Number เพื่อให้ตรงกับชนิดข้อมูลใน JSON (ถ้าใน DB เก็บเป็นเลข)
+            session_id: Number(session_id),
+            experiment_id: Number(experiment_id)
+          }
+        }
+      }
+    });
+
+    if (deletedCount === 0) {
+      return res.status(404).json({ message: 'No records found to delete matching criteria.' });
+    }
+
+    res.json({ 
+      message: 'Successfully deleted records', 
+      deleted_count: deletedCount,
+      criteria: { session_id, experiment_id }
+    });
+
+  } catch (err) {
+    console.error('Error deleting stats:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
 
 export default router;

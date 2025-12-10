@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Dashboard</title>
+</head>
+<body>
+  <h1>ข้อมูลสดจาก Backend</h1>
+  <pre id="data">กำลังโหลด...</pre>
+
+  <script>
+    async function loadData() {
+      const res = await fetch('https://mctrl.kmutt.ac.th/ken-api/api/stat/'); // เปลี่ยนเป็น API จริงของคุณ
+      const json = await res.json();
+      document.getElementById('data').innerText = JSON.stringify(json, null, 2);
+    }
+
+    // โหลดทุก 2 วินาที
+    setInterval(loadData, 2000);
+    loadData(); 
+  </script>
+</body>
+</html>
