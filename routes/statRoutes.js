@@ -97,7 +97,7 @@ router.get('/view', async (req, res) => {
         // Path จะเป็น: /usr/src/app/routes/statRoutes.js
         // เราต้องการ: /usr/src/app/frontend/index.html
         // ดังนั้นต้องย้อนกลับไป 2 ระดับ ('..', '..') แล้วเข้า 'frontend'
-        const indexPath = path.join(__dirname, '..', '..', 'frontend', 'index.html');
+        const indexPath = path.join(__dirname,  '..', 'frontend', 'index.html');
         console.log(`Attempting to serve file from: ${indexPath}`); // Log เพื่อ Debug
         return res.sendFile(indexPath);
     } catch (err) {
