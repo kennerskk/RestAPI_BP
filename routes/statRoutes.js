@@ -3,8 +3,8 @@ import express from 'express';
 import { Stat } from '../models/stat_schema.js';
 import { Op } from 'sequelize'; 
 import { protect } from '../middleware/authMiddleware.js'; // เปิดใช้ถ้าต้องการ Auth Middleware
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
+const { fileURLToPath } = require('url');
 
 const router = express.Router();
 
