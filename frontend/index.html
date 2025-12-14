@@ -592,14 +592,20 @@
 
     function aggregateData(data, aggType) {
       const grouped = {};
-      
-      data.forEach(item => {
-        const topic = item.data.topic_name;
-        if (!grouped[topic]) {
-          grouped[topic] = [];
-        }
-        grouped[topic].push(item);
-      });
+     data.forEach(item => {
+  const topic =
+    item?.data?.topic_name ??
+    item?.topic ??
+    item?.data?.topic;
+
+  if (!topic) return; // กันข้อมูลพัง
+
+  if (!grouped[topic]) {
+    grouped[topic] = [];
+  }
+  grouped[topic].push(item);
+});
+
       
       const result = [];
       
