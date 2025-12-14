@@ -266,9 +266,13 @@
     }
 
     function getTopicName(item) {
-      // Try to get topic from data.topic first, then data.topic_name, then undefined
-      return item.data.topic || item.data.topic_name || 'undefined';
+      return (
+        item?.data?.topic ||
+        item?.data?.topic_name ||
+        'undefined'
+      );
     }
+
 
     function renderSections(data) {
       const grouped = {};
