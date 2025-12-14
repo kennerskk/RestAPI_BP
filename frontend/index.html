@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BlackPearl Data Visualization</title>
+  <title>BPDV:BlackPearl Data Visualization</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
   <style>
@@ -265,6 +265,11 @@
       }
     }
 
+    function getTopicName(item) {
+      // Try to get topic from data.topic first, then data.topic_name, then undefined
+      return item.data.topic || item.data.topic_name || 'undefined';
+    }
+
     function renderSections(data) {
       const grouped = {};
       
@@ -350,7 +355,10 @@
       if (!canvas) return;
       
       const gpsData = data
-        .filter(d => d.data.topic_name === "gps/location")
+        .filter(d => {
+          const topic = getTopicName(d);
+          return topic === "gps/location";
+        })
         .map(d => ({
           x: d.data.data.longitude,
           y: d.data.data.latitude,
@@ -457,7 +465,7 @@
       `;
       
       nearbyData.forEach(item => {
-        const topic = item.data.topic_name;
+        const topic = getTopicName(item);
         const d = item.data.data;
         let valueText = '';
         
@@ -496,8 +504,8 @@
       
       const filters = tableFilters[key];
       
-      // Get unique topics
-      const topics = [...new Set(data.map(d => d.data.topic_name))].sort();
+      // Get unique topics using the helper function
+      const topics = [...new Set(data.map(d => getTopicName(d)))].sort();
       
       // Create header with filters
       thead.innerHTML = `
@@ -547,7 +555,7 @@
       // Filter data
       let filteredData = data.filter(d => {
         if (filters.topicFilter === 'all') return true;
-        return d.data.topic_name === filters.topicFilter;
+        return getTopicName(d) === filters.topicFilter;
       });
       
       // Sort by time if needed
@@ -566,7 +574,7 @@
       tbody.innerHTML = filteredData.map(item => {
         const d = item.data.data;
         const time = new Date(item.createdAt).toLocaleString('th-TH');
-        const topic = item.data.topic_name;
+        const topic = getTopicName(item);
         
         let valueText = '';
         if (d.values) {
@@ -592,20 +600,14 @@
 
     function aggregateData(data, aggType) {
       const grouped = {};
-     data.forEach(item => {
-  const topic =
-    item?.data?.topic_name ??
-    item?.topic ??
-    item?.data?.topic;
-
-  if (!topic) return; // กันข้อมูลพัง
-
-  if (!grouped[topic]) {
-    grouped[topic] = [];
-  }
-  grouped[topic].push(item);
-});
-
+      
+      data.forEach(item => {
+        const topic = getTopicName(item);
+        if (!grouped[topic]) {
+          grouped[topic] = [];
+        }
+        grouped[topic].push(item);
+      });
       
       const result = [];
       
