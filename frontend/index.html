@@ -267,11 +267,12 @@
 
     function getTopicName(item) {
       return (
-        item?.data?.topic ||
-        // item?.data?.topic_name ||
+        item?.data?.topic ??
+        item?.data?.topic_name ??
         'undefined'
       );
     }
+
 
 
     function renderSections(data) {
