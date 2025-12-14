@@ -3,8 +3,13 @@ import express from 'express';
 import { Stat } from '../models/stat_schema.js';
 import { Op } from 'sequelize'; 
 import { protect } from '../middleware/authMiddleware.js'; // เปิดใช้ถ้าต้องการ Auth Middleware
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const router = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // POST: เพิ่มข้อมูลสถิติใหม่
 // Endpoint: /api/stat/add
@@ -94,6 +99,17 @@ router.delete('/delete-session', async (req, res) => {
 
   } catch (err) {
     console.error('Error deleting stats:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
+
+// GET: serve frontend page (calls frontend/index.html)
+router.get('/view', async (req, res) => {
+  try {
+    const indexPath = path.join(__dirname, '..', '..', 'frontend', 'index.html');
+    return res.sendFile(indexPath);
+  } catch (err) {
+    console.error('Error sending frontend page:', err);
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });

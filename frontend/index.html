@@ -1,22 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <title>Live Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IMU Data Visualization</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
 </head>
 <body>
-  <h1>ข้อมูลสดจาก Backend</h1>
-  <pre id="data">กำลังโหลด...</pre>
+  <div class="controls">
+    <div class="control-group">
+      <label>ระยะเวลาอัพเดท (วินาที):</label>
+      <input type="number" id="intervalInput" value="2" min="0.5" step="0.5">
+      <button class="btn-primary" onclick="updateInterval()">ตั้งค่า</button>
+    </div>
+    <button class="btn-danger" id="toggleBtn" onclick="toggleAutoUpdate()">⏸️ หยุดอัพเดท</button>
+    <button class="btn-success" onclick="manualUpdate()">🔄 อัพเดทตอนนี้</button>
+    <div id="status">อัพเดททุก 2 วินาที</div>
+  </div>
 
-  <script>
-    async function loadData() {
-      const res = await fetch('https://mctrl.kmutt.ac.th/ken-api/api/stat/'); // เปลี่ยนเป็น API จริงของคุณ
-      const json = await res.json();
-      document.getElementById('data').innerText = JSON.stringify(json, null, 2);
-    }
+  <div id="noData">ไม่มีข้อมูล</div>
+  <div id="sections"></div>
 
-    // โหลดทุก 2 วินาที
-    setInterval(loadData, 2000);
-    loadData(); 
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
