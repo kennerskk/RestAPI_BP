@@ -41,6 +41,9 @@ export const initUserModel = (sequelize) => {
     return User;
 };
 
+// ฟังก์ชันสำหรับดึง Model User กลับมา (ใช้ในที่อื่นๆ)
+export const getUser = () => User;
+
 // ฟังก์ชันสำหรับสร้าง Admin User (เรียกใช้ใน server.js)
 export const createAdminUser = async () => {
     try {
@@ -49,6 +52,10 @@ export const createAdminUser = async () => {
 
         if (!adminUsername || !adminPassword) {
             console.log('🟠 ADMIN_USERNAME or ADMIN_PASSWORD not set. Skipping admin creation.');
+            return;
+        }
+        if (!User) {
+            console.error('createAdminUser: User model not initialized');
             return;
         }
 
