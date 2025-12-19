@@ -26,6 +26,7 @@ export const login = async (req, res) => {
 
     // 3) Get hashed password
     const storedPassword = user.password;
+    console.log(storedPassword);
     if (!storedPassword) {
       console.error('Password field missing for user:', username);
       return res.status(500).json({ message: 'Server error' });
