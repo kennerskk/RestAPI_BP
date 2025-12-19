@@ -1,23 +1,18 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import { Sequelize } from 'sequelize';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-// Import Routes
+import { initUserModel, createAdminUser } from './models/user_schema.js';
+import { initStatModel } from './models/stat_schema.js';
 import statRoutes from './routes/statRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-
-// Import Models และ Init Functions
-// (User ยังคงใช้ import แบบเดิมตามที่คุณมี)
-import User, { initUserModel, createAdminUser } from './models/user_schema.js'; 
-// 👉 Import initStatModel เข้ามา (ไม่ต้อง import Stat ที่นี่เพราะไม่ได้ใช้โดยตรง)
-import { initStatModel } from './models/stat_schema.js'; 
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
