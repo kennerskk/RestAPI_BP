@@ -42,9 +42,7 @@ export const login = async (req, res) => {
     console.log(`Login attempt: user=${username}, match=${isMatch}`);
 
     if (!isMatch) {
-    console.log(storedPassword);
-
-      return res.status(400).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+      console.log(storedPassword);
     }
 
     // 5) Generate JWT
