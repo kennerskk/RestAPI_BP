@@ -6,6 +6,14 @@ import { initUserModel, createAdminUser } from './models/user_schema.js';
 import { initStatModel } from './models/stat_schema.js';
 import statRoutes from './routes/statRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// serve frontend
+app.use('/ken-api', express.static(path.join(__dirname, 'frontend')));
 
 dotenv.config();
 
