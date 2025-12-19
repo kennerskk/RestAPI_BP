@@ -52,7 +52,7 @@
       const data = await res.json();
       localStorage.setItem('token', data.token);
       // redirect ไปหน้า view ที่ต้องการ
-      window.location.href = 'https://mctrl.kmutt.ac.th/ken-api/api/stat/view';
+      window.location.href = 'https://mctrl.kmutt.ac.th/ken-api/index.html';
     } catch (err) {
       errEl.textContent = err.message || String(err);
     }

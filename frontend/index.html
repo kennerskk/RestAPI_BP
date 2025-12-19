@@ -240,6 +240,11 @@
   <div id="sections"></div>
 
   <script>
+    fetch('/ken-api/api/stat/view', {
+  headers: {
+    'Authorization': 'Bearer ' + localStorage.getItem('token')
+  }
+})
     const API_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/";
     const DELETE_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/delete-session";
     const LOGIN_URL = "https://mctrl.kmutt.ac.th/ken-api/api/auth/login";
@@ -263,7 +268,7 @@
         // หากไม่มี token ให้ไปหน้า login ทันที
         const token = localStorage.getItem('token');
         if (!token) {
-          return window.location.href = LOGIN_URL;
+          return window.location.href = '/ken-api/login.html';
         }
 
         const resp = await fetch(API_URL, { headers: getAuthHeaders() });
