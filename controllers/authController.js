@@ -22,13 +22,13 @@ export const login = async (req, res) => {
       user = await User.findOne({ username }).catch(() => null);
     }
 
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(400).json({ message: 'ไม่พบผู้ใช้งาน' });
 
     const storedPassword = user.password ?? user.dataValues?.password;
     if (!storedPassword) return res.status(500).json({ message: 'User password not found' });
 
     const isMatch = await bcrypt.compare(password, storedPassword);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'ไม่ตรง' });
 
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET not set');
