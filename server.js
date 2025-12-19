@@ -36,7 +36,7 @@ const connectDB = async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ Connected to PostgreSQL');
-
+        
         // Sync ตาราง (สร้างตารางถ้ายังไม่มี)
         // force: false หมายถึงข้อมูลเก่าจะไม่หาย
         await sequelize.sync({ force: false }); 
