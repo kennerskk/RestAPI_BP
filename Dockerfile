@@ -2,12 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
+# Copy package files
 COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm install --production
 
-COPY . .
+# Copy source code explicitly
+COPY server.js ./
+COPY models ./models
+COPY routes ./routes
+COPY frontend ./frontend
 
+# Expose port
 EXPOSE 3000
 
-CMD [ "node", "server.js" ]
+# Start server
+CMD ["node", "server.js"]
