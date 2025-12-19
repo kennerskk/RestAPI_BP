@@ -242,6 +242,13 @@
   <script>
     const API_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/";
     const DELETE_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/delete-session";
+    // helper: attach token from localStorage
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
 
     let charts = {};
     let updateIntervalId = null;
@@ -252,15 +259,27 @@
 
     async function loadData() {
       try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
-        
+        // หากไม่มี token ให้ไปหน้า login ทันที
+        const token = localStorage.getItem('token');
+        if (!token) {
+          return window.location.href = '/frontend/login.html';
+        }
+
+        const resp = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            return window.location.href = '/frontend/login.html';
+          }
+          throw new Error('Failed to fetch data');
+        }
+        const json = await resp.json();
+
         if (!json || json.length === 0) {
           document.getElementById('noData').style.display = 'block';
           document.getElementById('sections').innerHTML = '';
           return;
         }
-        
+
         document.getElementById('noData').style.display = 'none';
         renderSections(json);
       } catch (err) {

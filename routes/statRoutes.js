@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url'; 
 import { Op } from 'sequelize'; 
 import { Stat } from '../models/stat_schema.js';
-// import { protect } from '../middleware/authMiddleware.js'; // เปิดใช้ถ้าต้องการ Auth Middleware
+import { protect } from '../middleware/authMiddleware.js'; // เปิดใช้ Auth JWT
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 
 // POST: เพิ่มข้อมูลสถิติใหม่
 // Endpoint: /api/stat/add
-router.post('/add', async (req, res) => {
+router.post('/add', protect, async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         if (!Stat) {
@@ -33,7 +33,7 @@ router.post('/add', async (req, res) => {
 
 // GET: ดึงข้อมูลสถิติทั้งหมด
 // Endpoint: /api/stat/
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         if (!Stat) {
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
 }); 
 
 // DELETE: ลบข้อมูลตาม session_id และ experiment_id
-router.delete('/delete-session', async (req, res) => {
+router.delete('/delete-session', protect, async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         const { session_id, experiment_id } = req.body;
@@ -92,7 +92,7 @@ router.delete('/delete-session', async (req, res) => {
 
 // GET: Serve frontend page (calls frontend/index.html)
 // Endpoint: /api/stat/view
-router.get('/view', async (req, res) => {
+router.get('/view', protect, async (req, res) => {
     try {
         // Path จะเป็น: /usr/src/app/routes/statRoutes.js
         // เราต้องการ: /usr/src/app/frontend/index.html
