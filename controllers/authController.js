@@ -26,7 +26,6 @@ export const login = async (req, res) => {
 
     // 3) Get hashed password
     const storedPassword = user.password;
-    console.log(storedPassword);
     if (!storedPassword) {
       console.error('Password field missing for user:', username);
       return res.status(500).json({ message: 'Server error' });
@@ -43,6 +42,8 @@ export const login = async (req, res) => {
     console.log(`Login attempt: user=${username}, match=${isMatch}`);
 
     if (!isMatch) {
+    console.log(storedPassword);
+
       return res.status(400).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
     }
 
