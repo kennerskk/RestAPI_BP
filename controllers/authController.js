@@ -6,45 +6,59 @@ export const login = async (req, res) => {
   const User = getUser();
   if (!User) {
     console.error('User model not initialized');
-    return res.status(500).json({ message: 'Server misconfiguration: User model not initialized' });
+    return res.status(500).json({ message: 'Server misconfiguration' });
   }
 
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ message: 'username and password required' });
+  // 1) Validate input
+  const username = req.body?.username?.trim();
+  const password = req.body?.password?.trim();
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'username and password required' });
+  }
 
   try {
-    const user = await (async () => {
-      try { return await User.findOne({ where: { username } }); } catch (e) { return await User.findOne({ username }).catch(() => null); }
-    })();
-
-    if (!user) return res.status(400).json({ message: 'ไม่พบผู้ใช้งาน' });
-
-    const storedPassword = user.password ?? user.dataValues?.password;
-    console.log('DEBUG: storedPassword length=', storedPassword?.length, 'startsWith $2=', storedPassword?.startsWith?.('$2'));
-
-    if (!storedPassword) return res.status(500).json({ message: 'User password not found' });
-    if ((storedPassword ?? '').length < 50) {
-      // very likely truncated / not a valid bcrypt hash
-      console.error('Stored password looks invalid/truncated:', storedPassword);
-      return res.status(500).json({ message: 'Stored password invalid (possibly truncated or not bcrypt).' });
+    // 2) Find user
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(400).json({ message: 'ไม่พบผู้ใช้งาน' });
     }
 
+    // 3) Get hashed password
+    const storedPassword = user.password;
+    if (!storedPassword) {
+      console.error('Password field missing for user:', username);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    // sanity check (bcrypt hash ปกติจะ ~60 chars)
+    if (storedPassword.length < 50 || !storedPassword.startsWith('$2')) {
+      console.error('Invalid bcrypt hash stored:', storedPassword);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    // 4) Compare password
     const isMatch = await bcrypt.compare(password, storedPassword);
-    console.log('DEBUG: bcrypt.compare result =', isMatch);
+    console.log(`Login attempt: user=${username}, match=${isMatch}`);
 
     if (!isMatch) {
-      // hint for common causes
-      return res.status(400).json({ message: 'ไม่ตรง (ตรวจสอบว่ารหัสเก็บเป็น bcrypt แบบ plain password ถูก hash ซ้มหรือไม่)' });
+      return res.status(400).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
     }
 
+    // 5) Generate JWT
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET not set');
       return res.status(500).json({ message: 'Server misconfiguration' });
     }
 
-    const userId = user.id ?? user.dataValues?.id ?? user._id;
-    const token = jwt.sign({ user: { id: userId } }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { user: { id: user.id } },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
     return res.json({ token });
+
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ message: 'Server error' });
