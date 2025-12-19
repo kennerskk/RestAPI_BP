@@ -248,20 +248,13 @@
     const API_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/";
     const DELETE_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/delete-session";
     const LOGIN_URL = "https://mctrl.kmutt.ac.th/ken-api/api/auth/login";
-    // helper: read cookie + attach token from localStorage or cookie
-function getCookie(name) {
-  const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-  return m ? decodeURIComponent(m.pop()) : null;
-}
-
-function getAuthHeaders() {
-  const tokenLS = localStorage.getItem('token');
-  const tokenCookie = getCookie('token');
-  const token = tokenLS || tokenCookie;
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  return headers;
-}
+    // helper: attach token from localStorage
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
 
     let charts = {};
     let updateIntervalId = null;
