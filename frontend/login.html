@@ -38,7 +38,6 @@
         body: JSON.stringify({ username, password })
       });
 
-      // debug: if server responds non-JSON show body
       const ct = res.headers.get('content-type') || '';
       if (!res.ok) {
         const body = ct.includes('application/json') ? await res.json() : await res.text();
@@ -51,8 +50,13 @@
 
       const data = await res.json();
       localStorage.setItem('token', data.token);
-      // redirect ไปหน้า view ที่ต้องการ
-      window.location.href = 'https://mctrl.kmutt.ac.th/ken-api/index.html';
+
+      // set cookie so server-side protect can read it on direct GET /api/stat/view
+      // expires ~1 hour (3600s) to match JWT expiry; adjust as needed
+      document.cookie = 'token=' + encodeURIComponent(data.token) + '; path=/; max-age=3600; Secure; SameSite=Lax';
+
+      // redirect to protected view
+      window.location.href = 'https://mctrl.kmutt.ac.th/ken-api/api/stat/view';
     } catch (err) {
       errEl.textContent = err.message || String(err);
     }
