@@ -26,20 +26,29 @@
     document.getElementById('loginBtn').addEventListener('click', async () => {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
-      document.getElementById('err').textContent = '';
+      const errEl = document.getElementById('err');
+      errEl.textContent = '';
       try {
         const res = await fetch(API_LOGIN, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username, password }),
+          redirect: 'follow'
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Login failed');
-        localStorage.setItem('token', data.token);
-        // ไปที่หน้าแสดงข้อมูล
-        window.location.href = '/api/stat/view';
+
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Login failed');
+          localStorage.setItem('token', data.token);
+          window.location.href = '/api/stat/view';
+        } else {
+          const text = await res.text();
+          const msg = res.ok ? 'Unexpected non-JSON response from server' : (text || `HTTP ${res.status}`);
+          throw new Error(msg);
+        }
       } catch (err) {
-        document.getElementById('err').textContent = err.message;
+        errEl.textContent = err.message;
       }
     });
   </script>
