@@ -59,21 +59,23 @@ export const createAdminUser = async () => {
             return;
         }
 
-        const existingAdmin = await User.findOne({ where: { username: adminUsername } }); // ใช้ Sequelize FindOne
+        const existingAdmin = await User.findOne({ where: { username: adminUsername } });
 
         if (!existingAdmin) {
-            // ใช้ Sequelize create() แทน new User().save()
-            await User.create({
-                username: adminUsername,
-                password: adminPassword, 
-            });
+            const isAlreadyHashed = typeof adminPassword === 'string' && adminPassword.startsWith('$2') && adminPassword.length >= 50;
+            if (isAlreadyHashed) {
+                // เก็บค่า hash ตรงๆ โดยข้าม hooks (เพื่อไม่ให้ hash ซ้ำ)
+                await User.create({ username: adminUsername, password: adminPassword }, { hooks: false });
+            } else {
+                // ให้ hook ก่อนCreate ทำการ hash ให้
+                await User.create({ username: adminUsername, password: adminPassword });
+            }
             console.log('✅ Admin user created');
         } else {
             console.log('ℹ️ Admin user already exists');
         }
     } catch (error) {
         console.error('❌ Error creating admin user:', error);
-        // เนื่องจาก Error อาจเกิดจากการ hash หรือการเชื่อมต่อ DB
     }
 };
 
