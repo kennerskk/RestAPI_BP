@@ -242,6 +242,7 @@
   <script>
     const API_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/";
     const DELETE_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/delete-session";
+    const LOGIN_URL = "https://mctrl.kmutt.ac.th/ken-api/api/auth/login";
     // helper: attach token from localStorage
     function getAuthHeaders() {
       const token = localStorage.getItem('token');
@@ -262,13 +263,13 @@
         // หากไม่มี token ให้ไปหน้า login ทันที
         const token = localStorage.getItem('token');
         if (!token) {
-          return window.location.href = '/frontend/login.html';
+          return window.location.href = LOGIN_URL;
         }
 
         const resp = await fetch(API_URL, { headers: getAuthHeaders() });
         if (!resp.ok) {
           if (resp.status === 401) {
-            return window.location.href = '/frontend/login.html';
+            return window.location.href = LOGIN_URL;
           }
           throw new Error('Failed to fetch data');
         }

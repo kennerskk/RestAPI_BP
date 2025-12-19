@@ -22,35 +22,41 @@
   </div>
 
   <script>
-    const API_LOGIN = '/api/auth/login';
-    document.getElementById('loginBtn').addEventListener('click', async () => {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      const errEl = document.getElementById('err');
-      errEl.textContent = '';
-      try {
-        const res = await fetch(API_LOGIN, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-          redirect: 'follow'
-        });
+  const API_LOGIN = 'https://mctrl.kmutt.ac.th/ken-api/api/auth/login';
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('err');
+    errEl.textContent = '';
+    try {
+      const res = await fetch(API_LOGIN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
 
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.message || 'Login failed');
-          localStorage.setItem('token', data.token);
-          window.location.href = '/api/stat/view';
-        } else {
-          const text = await res.text();
-          const msg = res.ok ? 'Unexpected non-JSON response from server' : (text || `HTTP ${res.status}`);
-          throw new Error(msg);
-        }
-      } catch (err) {
-        errEl.textContent = err.message;
+      // debug: if server responds non-JSON show body
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const body = ct.includes('application/json') ? await res.json() : await res.text();
+        throw new Error(body?.message || body || `HTTP ${res.status}`);
       }
-    });
+
+      if (!ct.includes('application/json')) {
+        throw new Error('Unexpected non-JSON response from server');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      // redirect ไปหน้า view ที่ต้องการ
+      window.location.href = 'https://mctrl.kmutt.ac.th/ken-api/api/stat/view';
+    } catch (err) {
+      errEl.textContent = err.message || String(err);
+    }
+  });
   </script>
 </body>
 </html>
