@@ -43,6 +43,7 @@ export const login = async (req, res) => {
 
     if (!isMatch) {
       console.log(storedPassword);
+      return res.status(500);
     }
 
     // 5) Generate JWT
