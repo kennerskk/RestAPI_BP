@@ -48,7 +48,8 @@ export const getUser = () => User;
 export const createAdminUser = async () => {
     try {
         const adminUsername = process.env.ADMIN_USERNAME;
-        const adminPassword = process.env.ADMIN_PASSWORD;
+        const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+
 
         if (!adminUsername || !adminPassword) {
             console.log('🟠 ADMIN_USERNAME or ADMIN_PASSWORD not set. Skipping admin creation.');
