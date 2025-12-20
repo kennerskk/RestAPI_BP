@@ -1,11 +1,14 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/user_schema.js';
+import { getUser } from '../models/user_schema.js';
 
 export const protect = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization || (req.cookies && req.cookies.token);
+    const authHeader =
+      req.headers.authorization ||
+      (req.cookies && req.cookies.token);
+
     let token;
-    if (authHeader && authHeader.startsWith && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith?.('Bearer ')) {
       token = authHeader.split(' ')[1];
     } else {
       token = authHeader;
@@ -16,17 +19,14 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Try different retrieval styles to support Sequelize or other ORMs
-    let user = null;
-    if (User.findByPk) {
-      try { user = await User.findByPk(decoded.user.id); } catch {}
+
+    const User = getUser();
+    if (!User) {
+      console.error('User model not initialized');
+      return res.status(500).json({ message: 'Server error' });
     }
-    if (!user && User.findOne) {
-      try {
-        user = await User.findOne({ where: { id: decoded.user.id } });
-        if (!user) user = await User.findOne({ id: decoded.user.id });
-      } catch {}
-    }
+
+    const user = await User.findByPk(decoded.user.id);
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
