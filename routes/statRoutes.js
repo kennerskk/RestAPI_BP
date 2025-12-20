@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 
 // POST: เพิ่มข้อมูลสถิติใหม่
 // Endpoint: /api/stat/add
-router.post('/add', protect, async (req, res) => {
+router.post('/add', async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         if (!Stat) {
@@ -33,7 +33,7 @@ router.post('/add', protect, async (req, res) => {
 
 // GET: ดึงข้อมูลสถิติทั้งหมด
 // Endpoint: /api/stat/
-router.get('/', protect, async (req, res) => {
+router.get('/', async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         if (!Stat) {
@@ -50,7 +50,7 @@ router.get('/', protect, async (req, res) => {
 }); 
 
 // DELETE: ลบข้อมูลตาม session_id และ experiment_id
-router.delete('/delete-session', protect, async (req, res) => {
+router.delete('/delete-session', async (req, res) => {
     // ... (โค้ดเดิม) ...
     try {
         const { session_id, experiment_id } = req.body;
