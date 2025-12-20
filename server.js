@@ -63,8 +63,8 @@ const connectDB = async () => {
 connectDB();
 
 // 3. ใช้งาน Routes
-app.use('/api/stat', statRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/ken-api/api/stat', statRoutes);
+app.use('/ken-api/api/auth', authRoutes);
 
 // Health Check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
