@@ -272,6 +272,106 @@
       }
     }
 
+  function flattenObject(obj, prefix = "", res = {}) {
+  for (const key in obj) {
+    const value = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
+
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      flattenObject(value, newKey, res);
+    } else {
+      res[newKey] = value;
+    }
+  }
+  return res;
+}
+
+/* =======================
+   NORMALIZE (NO SCHEMA)
+======================= */
+function normalizeDynamic(item) {
+  const meta = {
+    id: item.id,
+    session_id: item.data?.session_id,
+    experiment_id: item.data?.experiment_id,
+    topic_name: item.data?.topic_name || item.data?.topic,
+    timestamp:
+      item.data?.data?.timestamp ??
+      item.data?.timestamp ??
+      new Date(item.createdAt).getTime(),
+    createdAt: item.createdAt
+  };
+
+  const payload = item.data?.data ?? {};
+  const flatPayload = flattenObject(payload);
+
+  return {
+    ...meta,
+    ...flatPayload
+  };
+}
+
+/* =======================
+   COLLECT ALL KEYS (CSV)
+======================= */
+function collectAllKeys(rows) {
+  const set = new Set();
+  rows.forEach(r => Object.keys(r).forEach(k => set.add(k)));
+  return Array.from(set);
+}
+/* =======================
+   EXPORT JSON (SECTION)
+======================= */
+function exportSectionJSON(key) {
+  const section = allData[key];
+  if (!section) return;
+
+  const rows = section.data.map(normalizeDynamic);
+
+  const blob = new Blob(
+    [JSON.stringify(rows, null, 2)],
+    { type: "application/json" }
+  );
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `session_${section.session_id}_exp_${section.experiment_id}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* =======================
+   EXPORT CSV (SECTION)
+======================= */
+function exportSectionCSV(key) {
+  const section = allData[key];
+  if (!section) return;
+
+  const rows = section.data.map(normalizeDynamic);
+  if (rows.length === 0) return;
+
+  const headers = collectAllKeys(rows);
+
+  const csv = [
+    headers.join(","),
+    ...rows.map(r =>
+      headers.map(h => JSON.stringify(r[h] ?? "")).join(",")
+    )
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `session_${section.session_id}_exp_${section.experiment_id}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
     function getTopicName(item) {
       return (
         item?.data?.topic ??
@@ -327,9 +427,20 @@
           <div class="session-title">
             Session ${session_id} | Experiment ${experiment_id}
           </div>
-          <button class="delete-btn" onclick="deleteSession(${session_id}, ${experiment_id})">
-            🗑️ ลบข้อมูล
-          </button>
+          </div>
+    <div class="session-actions">
+      <button class="export-btn" onclick="exportSectionJSON('${key}')">
+        📦 Export JSON
+      </button>
+      <button class="export-btn" onclick="exportSectionCSV('${key}')">
+        📊 Export CSV
+      </button>
+      <button class="delete-btn" onclick="deleteSession(${session_id}, ${experiment_id})">
+        🗑️ ลบข้อมูล
+      </button>
+    </div>
+  </div>
+
         </div>
         <div class="content-grid">
           <div>
