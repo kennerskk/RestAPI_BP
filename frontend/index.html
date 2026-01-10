@@ -231,6 +231,12 @@
       <input type="number" id="intervalInput" value="2" min="0.5" step="0.5">
       <button class="btn-primary" onclick="updateInterval()">ตั้งค่า</button>
     </div>
+  <div style="margin-bottom:16px;">
+    <input type="file" id="fileInput" accept=".json" />
+    <button onclick="handleFileUpload()">📂 Upload JSON</button>
+    <span id="uploadStatus" style="margin-left:8px;"></span>
+  </div>
+
     <button class="btn-danger" id="toggleBtn" onclick="toggleAutoUpdate()">⏸️ หยุดอัพเดท</button>
     <button class="btn-success" onclick="manualUpdate()">🔄 อัพเดทตอนนี้</button>
     <div id="status">อัพเดททุก 2 วินาที</div>
@@ -271,7 +277,56 @@
         console.error('Error loading data:', err);
       }
     }
+  function handleFileUpload() {
+  const input = document.getElementById("fileInput");
+  const status = document.getElementById("uploadStatus");
 
+  if (!input.files || input.files.length === 0) {
+    alert("กรุณาเลือกไฟล์ JSON");
+    return;
+    }
+
+    const file = input.files[0];
+
+    if (!file.name.endsWith(".json")) {
+      alert("รองรับเฉพาะไฟล์ .json");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+
+        if (!Array.isArray(parsed)) {
+          alert("ไฟล์ต้องเป็น JSON Array");
+          return;
+        }
+
+        // 👉 ตรวจสอบโครงสร้างคร่าว ๆ
+        const valid = parsed.every(
+          item => item.data && item.data.session_id !== undefined
+        );
+
+        if (!valid) {
+          alert("โครงสร้างไฟล์ไม่ตรงกับข้อมูลจาก API");
+          return;
+        }
+
+        // 🔥 ใช้ pipeline เดียวกับ API
+        renderSections(parsed);
+
+        status.textContent = `✅ โหลดไฟล์สำเร็จ (${parsed.length} records)`;
+        status.style.color = "green";
+      } catch (err) {
+        alert("ไฟล์ JSON ไม่ถูกต้อง");
+        console.error(err);
+      }
+    };
+
+    reader.readAsText(file);
+  }
   function flattenObject(obj, prefix = "", res = {}) {
   for (const key in obj) {
     const value = obj[key];
@@ -330,7 +385,8 @@ function exportSectionJSON(key) {
   const section = allData[key];
   if (!section) return;
 
-  const rows = section.data.map(normalizeDynamic);
+  // ❗ ใช้ raw data จาก API โดยตรง
+  const rows = section.data;
 
   const blob = new Blob(
     [JSON.stringify(rows, null, 2)],
@@ -343,6 +399,7 @@ function exportSectionJSON(key) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
 
 /* =======================
    EXPORT CSV (SECTION)
