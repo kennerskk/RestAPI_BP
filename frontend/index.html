@@ -175,7 +175,7 @@
       border-radius: 3px;
       background: rgba(255,255,255,0.9);
       color: #333;
-      width: 90px;
+      width: 110px;
     }
     .sort-indicator {
       font-size: 0.8em;
@@ -264,6 +264,24 @@
     let isAutoUpdateEnabled = true;
     let allData = {};
     let tableFilters = {};
+
+    function formatTimeInput(input) {
+      // เอาเฉพาะตัวเลข
+      let v = input.value.replace(/\D/g, "");
+
+      // จำกัดความยาว 6 หลัก (HHMMSS)
+      v = v.slice(0, 6);
+
+      let h = v.slice(0, 2);
+      let m = v.slice(2, 4);
+      let s = v.slice(4, 6);
+
+      let result = h;
+      if (v.length > 2) result += ":" + m;
+      if (v.length > 4) result += ":" + s;
+
+      input.value = result;
+    }
 
     async function loadData() {
       try {
@@ -667,12 +685,19 @@
                 </select>
               </div>
               <div class="filter-controls" style="margin-top: 5px;">
-                <input type="time" step="1" class="time-range-input" placeholder="เริ่มต้น" 
-                  value="${filters.timeStart}" 
+                <input type="text"
+                  class="time-range-input"
+                  placeholder="HH:mm:ss start"
+                  value="${filters.timeStart || ''}"
+                  oninput="formatTimeInput(this)"
                   onchange="changeTimeRange('${key}', 'start', this.value)">
+
                 <span style="color: white; font-size: 0.9em;">-</span>
-                <input type="time" step="1" class="time-range-input" placeholder="สิ้นสุด" 
-                  value="${filters.timeEnd}" 
+                <input type="text"
+                  class="time-range-input"
+                  placeholder="HH:mm:ss end"
+                  value="${filters.timeEnd || ''}"
+                  oninput="formatTimeInput(this)"
                   onchange="changeTimeRange('${key}', 'end', this.value)">
               </div>
             </div>
