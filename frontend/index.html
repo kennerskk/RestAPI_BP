@@ -168,6 +168,15 @@
       color: #333;
       cursor: pointer;
     }
+    .time-range-input {
+      padding: 3px 5px;
+      font-size: 0.8em;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 3px;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      width: 90px;
+    }
     .sort-indicator {
       font-size: 0.8em;
       margin-left: 5px;
@@ -231,12 +240,11 @@
       <input type="number" id="intervalInput" value="2" min="0.5" step="0.5">
       <button class="btn-primary" onclick="updateInterval()">ตั้งค่า</button>
     </div>
-  <div style="margin-bottom:16px;">
-    <input type="file" id="fileInput" accept=".json" />
-    <button onclick="handleFileUpload()">📂 Upload JSON</button>
-    <span id="uploadStatus" style="margin-left:8px;"></span>
-  </div>
-
+    <div style="margin-bottom:16px;">
+      <input type="file" id="fileInput" accept=".json" />
+      <button onclick="handleFileUpload()">📂 Upload JSON</button>
+      <span id="uploadStatus" style="margin-left:8px;"></span>
+    </div>
     <button class="btn-danger" id="toggleBtn" onclick="toggleAutoUpdate()">⏸️ หยุดอัพเดท</button>
     <button class="btn-success" onclick="manualUpdate()">🔄 อัพเดทตอนนี้</button>
     <div id="status">อัพเดททุก 2 วินาที</div>
@@ -244,11 +252,8 @@
 
   <div id="noData">ไม่มีข้อมูล</div>
   <div id="sections"></div>
-  <iframe src="https://jsonbp.netlify.app/"
-  width="100%"
-  height="1000px">
-
-  </iframe>
+  <iframe src="https://jsonbp.netlify.app/" width="100%" height="1000px"></iframe>
+  
   <script>
     const API_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/";
     const DELETE_URL = "https://mctrl.kmutt.ac.th/ken-api/api/stat/delete-session";
@@ -277,167 +282,133 @@
         console.error('Error loading data:', err);
       }
     }
-  function handleFileUpload() {
-  const input = document.getElementById("fileInput");
-  const status = document.getElementById("uploadStatus");
 
-  if (!input.files || input.files.length === 0) {
-    alert("กรุณาเลือกไฟล์ JSON");
-    return;
-    }
+    function handleFileUpload() {
+      const input = document.getElementById("fileInput");
+      const status = document.getElementById("uploadStatus");
 
-    const file = input.files[0];
-
-    if (!file.name.endsWith(".json")) {
-      alert("รองรับเฉพาะไฟล์ .json");
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = e => {
-      try {
-        const parsed = JSON.parse(e.target.result);
-
-        if (!Array.isArray(parsed)) {
-          alert("ไฟล์ต้องเป็น JSON Array");
-          return;
-        }
-
-        // 👉 ตรวจสอบโครงสร้างคร่าว ๆ
-        const valid = parsed.every(
-          item => item.data && item.data.session_id !== undefined
-        );
-
-        if (!valid) {
-          alert("โครงสร้างไฟล์ไม่ตรงกับข้อมูลจาก API");
-          return;
-        }
-
-        // 🔥 ใช้ pipeline เดียวกับ API
-        renderSections(parsed);
-
-        status.textContent = `✅ โหลดไฟล์สำเร็จ (${parsed.length} records)`;
-        status.style.color = "green";
-      } catch (err) {
-        alert("ไฟล์ JSON ไม่ถูกต้อง");
-        console.error(err);
+      if (!input.files || input.files.length === 0) {
+        alert("กรุณาเลือกไฟล์ JSON");
+        return;
       }
-    };
 
-    reader.readAsText(file);
-  }
-  function flattenObject(obj, prefix = "", res = {}) {
-  for (const key in obj) {
-    const value = obj[key];
-    const newKey = prefix ? `${prefix}.${key}` : key;
+      const file = input.files[0];
 
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value)
-    ) {
-      flattenObject(value, newKey, res);
-    } else {
-      res[newKey] = value;
+      if (!file.name.endsWith(".json")) {
+        alert("รองรับเฉพาะไฟล์ .json");
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+
+          if (!Array.isArray(parsed)) {
+            alert("ไฟล์ต้องเป็น JSON Array");
+            return;
+          }
+
+          const valid = parsed.every(
+            item => item.data && item.data.session_id !== undefined
+          );
+
+          if (!valid) {
+            alert("โครงสร้างไฟล์ไม่ตรงกับข้อมูลจาก API");
+            return;
+          }
+
+          renderSections(parsed);
+
+          status.textContent = `✅ โหลดไฟล์สำเร็จ (${parsed.length} records)`;
+          status.style.color = "green";
+        } catch (err) {
+          alert("ไฟล์ JSON ไม่ถูกต้อง");
+          console.error(err);
+        }
+      };
+
+      reader.readAsText(file);
     }
-  }
-  return res;
-}
 
-/* =======================
-   NORMALIZE (NO SCHEMA)
-======================= */
-function normalizeDynamic(item) {
-  const meta = {
-    id: item.id,
-    session_id: item.data?.session_id,
-    experiment_id: item.data?.experiment_id,
-    topic_name: item.data?.topic_name || item.data?.topic,
-    timestamp:
-      item.data?.data?.timestamp ??
-      item.data?.timestamp ??
-      new Date(item.createdAt).getTime(),
-    createdAt: item.createdAt
-  };
+    function flattenObject(obj, prefix = "", res = {}) {
+      for (const key in obj) {
+        const value = obj[key];
+        const newKey = prefix ? `${prefix}.${key}` : key;
 
-  const payload = item.data?.data ?? {};
-  const flatPayload = flattenObject(payload);
+        if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+          flattenObject(value, newKey, res);
+        } else {
+          res[newKey] = value;
+        }
+      }
+      return res;
+    }
 
-  return {
-    ...meta,
-    ...flatPayload
-  };
-}
+    function normalizeDynamic(item) {
+      const meta = {
+        id: item.id,
+        session_id: item.data?.session_id,
+        experiment_id: item.data?.experiment_id,
+        topic_name: item.data?.topic_name || item.data?.topic,
+        timestamp: item.data?.data?.timestamp ?? item.data?.timestamp ?? new Date(item.createdAt).getTime(),
+        createdAt: item.createdAt
+      };
 
-/* =======================
-   COLLECT ALL KEYS (CSV)
-======================= */
-function collectAllKeys(rows) {
-  const set = new Set();
-  rows.forEach(r => Object.keys(r).forEach(k => set.add(k)));
-  return Array.from(set);
-}
-/* =======================
-   EXPORT JSON (SECTION)
-======================= */
-function exportSectionJSON(key) {
-  const section = allData[key];
-  if (!section) return;
+      const payload = item.data?.data ?? {};
+      const flatPayload = flattenObject(payload);
 
-  // ❗ ใช้ raw data จาก API โดยตรง
-  const rows = section.data;
+      return { ...meta, ...flatPayload };
+    }
 
-  const blob = new Blob(
-    [JSON.stringify(rows, null, 2)],
-    { type: "application/json" }
-  );
+    function collectAllKeys(rows) {
+      const set = new Set();
+      rows.forEach(r => Object.keys(r).forEach(k => set.add(k)));
+      return Array.from(set);
+    }
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `session_${section.session_id}_exp_${section.experiment_id}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+    function exportSectionJSON(key) {
+      const section = allData[key];
+      if (!section) return;
 
+      const rows = section.data;
 
-/* =======================
-   EXPORT CSV (SECTION)
-======================= */
-function exportSectionCSV(key) {
-  const section = allData[key];
-  if (!section) return;
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
 
-  const rows = section.data.map(normalizeDynamic);
-  if (rows.length === 0) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `session_${section.session_id}_exp_${section.experiment_id}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
 
-  const headers = collectAllKeys(rows);
+    function exportSectionCSV(key) {
+      const section = allData[key];
+      if (!section) return;
 
-  const csv = [
-    headers.join(","),
-    ...rows.map(r =>
-      headers.map(h => JSON.stringify(r[h] ?? "")).join(",")
-    )
-  ].join("\n");
+      const rows = section.data.map(normalizeDynamic);
+      if (rows.length === 0) return;
 
-  const blob = new Blob([csv], { type: "text/csv" });
+      const headers = collectAllKeys(rows);
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `session_${section.session_id}_exp_${section.experiment_id}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+      const csv = [
+        headers.join(","),
+        ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `session_${section.session_id}_exp_${section.experiment_id}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
 
     function getTopicName(item) {
-      return (
-        item?.data?.topic ??
-        item?.data?.topic_name ??
-        'undefined'
-      );
+      return item?.data?.topic ?? item?.data?.topic_name ?? 'undefined';
     }
-
-
 
     function renderSections(data) {
       const grouped = {};
@@ -484,20 +455,17 @@ function exportSectionCSV(key) {
           <div class="session-title">
             Session ${session_id} | Experiment ${experiment_id}
           </div>
+          <div class="session-actions">
+            <button class="export-btn" onclick="exportSectionJSON('${key}')">
+              📦 Export JSON
+            </button>
+            <button class="export-btn" onclick="exportSectionCSV('${key}')">
+              📊 Export CSV
+            </button>
+            <button class="delete-btn" onclick="deleteSession(${session_id}, ${experiment_id})">
+              🗑️ ลบข้อมูล
+            </button>
           </div>
-    <div class="session-actions">
-      <button class="export-btn" onclick="exportSectionJSON('${key}')">
-        📦 Export JSON
-      </button>
-      <button class="export-btn" onclick="exportSectionCSV('${key}')">
-        📊 Export CSV
-      </button>
-      <button class="delete-btn" onclick="deleteSession(${session_id}, ${experiment_id})">
-        🗑️ ลบข้อมูล
-      </button>
-    </div>
-  </div>
-
         </div>
         <div class="content-grid">
           <div>
@@ -505,8 +473,7 @@ function exportSectionCSV(key) {
             <div class="chart-container">
               <canvas id="${chartId}"></canvas>
             </div>
-            <div class="zoom-controls">
-            </div>
+            <div class="zoom-controls"></div>
             <div id="${infoId}"></div>
           </div>
           <div>
@@ -624,7 +591,7 @@ function exportSectionCSV(key) {
       if (!infoDiv) return;
       
       const targetTime = new Date(timestamp).getTime();
-      const timeWindow = 1000; // 1 second window
+      const timeWindow = 1000;
       
       const nearbyData = allData.filter(d => {
         const itemTime = new Date(d.createdAt).getTime();
@@ -677,16 +644,16 @@ function exportSectionCSV(key) {
         tableFilters[key] = {
           topicFilter: 'all',
           timeSort: 'none',
-          valueAgg: 'raw'
+          valueAgg: 'raw',
+          timeStart: '',
+          timeEnd: ''
         };
       }
       
       const filters = tableFilters[key];
       
-      // Get unique topics using the helper function
       const topics = [...new Set(data.map(d => getTopicName(d)))].sort();
       
-      // Create header with filters
       thead.innerHTML = `
         <tr>
           <th>
@@ -698,6 +665,15 @@ function exportSectionCSV(key) {
                   <option value="asc" ${filters.timeSort === 'asc' ? 'selected' : ''}>เก่า→ใหม่</option>
                   <option value="desc" ${filters.timeSort === 'desc' ? 'selected' : ''}>ใหม่→เก่า</option>
                 </select>
+              </div>
+              <div class="filter-controls" style="margin-top: 5px;">
+                <input type="time" step="1" class="time-range-input" placeholder="เริ่มต้น" 
+                  value="${filters.timeStart}" 
+                  onchange="changeTimeRange('${key}', 'start', this.value)">
+                <span style="color: white; font-size: 0.9em;">-</span>
+                <input type="time" step="1" class="time-range-input" placeholder="สิ้นสุด" 
+                  value="${filters.timeEnd}" 
+                  onchange="changeTimeRange('${key}', 'end', this.value)">
               </div>
             </div>
           </th>
@@ -731,25 +707,36 @@ function exportSectionCSV(key) {
         </tr>
       `;
       
-      // Filter data
       let filteredData = data.filter(d => {
-        if (filters.topicFilter === 'all') return true;
-        return getTopicName(d) === filters.topicFilter;
+        if (filters.topicFilter !== 'all' && getTopicName(d) !== filters.topicFilter) {
+          return false;
+        }
+        
+        if (filters.timeStart || filters.timeEnd) {
+          const itemDate = new Date(d.createdAt);
+          const itemTime = itemDate.toTimeString().slice(0, 8);
+          
+          if (filters.timeStart && itemTime < filters.timeStart) {
+            return false;
+          }
+          if (filters.timeEnd && itemTime > filters.timeEnd) {
+            return false;
+          }
+        }
+        
+        return true;
       });
       
-      // Sort by time if needed
       if (filters.timeSort === 'asc') {
         filteredData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       } else if (filters.timeSort === 'desc') {
         filteredData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       }
       
-      // Apply aggregation if needed
       if (filters.valueAgg !== 'raw') {
         filteredData = aggregateData(filteredData, filters.valueAgg);
       }
       
-      // Render rows
       tbody.innerHTML = filteredData.map(item => {
         const d = item.data.data;
         const time = new Date(item.createdAt).toLocaleString('th-TH');
@@ -810,7 +797,6 @@ function exportSectionCSV(key) {
         
         let aggValue;
         if (typeof values[0] === 'object') {
-          // Handle XYZ values
           const xVals = values.map(v => v.x).filter(v => v != null);
           const yVals = values.map(v => v.y).filter(v => v != null);
           const zVals = values.map(v => v.z).filter(v => v != null);
@@ -825,7 +811,6 @@ function exportSectionCSV(key) {
           newItem.data.data.values = aggValue;
           result.push(newItem);
         } else {
-          // Handle single values
           aggValue = calculateAgg(values, aggType);
           const newItem = JSON.parse(JSON.stringify(items[0]));
           newItem.data.data.value = aggValue;
@@ -875,11 +860,25 @@ function exportSectionCSV(key) {
       }
     }
 
+    function changeTimeRange(key, type, value) {
+      if (type === 'start') {
+        tableFilters[key].timeStart = value;
+      } else {
+        tableFilters[key].timeEnd = value;
+      }
+      const section = allData[key];
+      if (section) {
+        updateTable(`table_${section.session_id}_${section.experiment_id}`, section.data, key);
+      }
+    }
+
     function resetFilters(key) {
       tableFilters[key] = {
         topicFilter: 'all',
         timeSort: 'none',
-        valueAgg: 'raw'
+        valueAgg: 'raw',
+        timeStart: '',
+        timeEnd: ''
       };
       const section = allData[key];
       if (section) {
