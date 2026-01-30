@@ -1,71 +1,117 @@
 import express from 'express';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 import { Sequelize } from 'sequelize';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Import Routes
+// Routes
 import statRoutes from './routes/statRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
-// Import Models และ Init Functions
-// (User ยังคงใช้ import แบบเดิมตามที่คุณมี)
-import User, { initUserModel, createAdminUser } from './models/user_schema.js'; 
-// 👉 Import initStatModel เข้ามา (ไม่ต้อง import Stat ที่นี่เพราะไม่ได้ใช้โดยตรง)
-import { initStatModel } from './models/stat_schema.js'; 
+// Models
+import User, { initUserModel, createAdminUser } from './models/user_schema.js';
+import { initStatModel, Stat } from './models/stat_schema.js';
 
 dotenv.config();
 
+/* ================== APP ================== */
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
-    console.error('❌ DATABASE_URL not set.');
-    process.exit(1);
+  console.error('❌ DATABASE_URL not set');
+  process.exit(1);
 }
 
-// 1. สร้าง Sequelize Instance
+/* ================== DATABASE ================== */
 const sequelize = new Sequelize(DATABASE_URL, {
-    dialect: 'postgres',
-    logging: false, // ปิดการแสดงผล SQL queries ใน log (เปิดเป็น true ถ้าต้องการ debug)
+  dialect: 'postgres',
+  logging: false,
 });
 
-// 2. Initialize Models (จุดสำคัญ! ต้องทำก่อน connectDB)
-// ส่ง sequelize instance เข้าไปเพื่อให้ Model ทำงานได้และตัวแปร Stat ได้รับค่า
-initUserModel(sequelize); 
-initStatModel(sequelize); // <--- ต้องเรียกตรงนี้ Stat ถึงจะไม่ undefined ใน Routes
+initUserModel(sequelize);
+initStatModel(sequelize);
 
-const connectDB = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('✅ Connected to PostgreSQL');
+try {
+  await sequelize.authenticate();
+  console.log('✅ Connected to PostgreSQL');
 
-        // Sync ตาราง (สร้างตารางถ้ายังไม่มี)
-        // force: false หมายถึงข้อมูลเก่าจะไม่หาย
-        await sequelize.sync({ force: false }); 
-        console.log('✅ All models were synchronized successfully.');
+  await sequelize.sync({ force: false });
+  console.log('✅ Models synchronized');
 
-        // สร้าง Admin (ถ้ามี logic นี้)
-        await createAdminUser(); 
+  await createAdminUser();
+} catch (err) {
+  console.error('❌ Database error:', err.message);
+  process.exit(1);
+}
 
-    } catch (error) {
-        console.error('❌ Database connection error:', error.message);
-        process.exit(1);
-    }
-};
-
-// เริ่มเชื่อมต่อ Database
-connectDB();
-
-// 3. ใช้งาน Routes
+/* ================== ROUTES ================== */
 app.use('/api/stat', statRoutes);
 app.use('/api/auth', authRoutes);
 
-// Health Check
-app.get('/', (req, res) => res.json({ status: 'ok' }));
+app.get('/', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server listening on port ${PORT}`);
+/* ================== HTTP + WEBSOCKET ================== */
+const server = http.createServer(app);
+
+/**
+ * WebSocket จะรับที่:
+ *   wss://mctrl.kmutt.ac.th/ken-api/
+ */
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (req, socket, head) => {
+  try {
+    const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+
+    if (pathname === '/ken-api/') {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    } else {
+      socket.destroy();
+    }
+  } catch (err) {
+    socket.destroy();
+  }
+});
+
+/* ================== WS LOGIC ================== */
+wss.on('connection', (ws, req) => {
+  console.log('🔌 WS connected from', req.socket.remoteAddress);
+
+  ws.on('message', async (raw) => {
+    try {
+      const payload = JSON.parse(raw.toString());
+
+      await Stat.create({
+        data: payload,
+      });
+
+      ws.send(JSON.stringify({ status: 'ok' }));
+    } catch (err) {
+      ws.send(
+        JSON.stringify({
+          status: 'error',
+          message: err.message,
+        })
+      );
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('❌ WS disconnected');
+  });
+});
+
+/* ================== START ================== */
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 HTTP + WS running on port ${PORT}`);
 });
