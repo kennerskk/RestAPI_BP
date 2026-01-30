@@ -71,7 +71,7 @@ server.on('upgrade', (req, socket, head) => {
   try {
     const { pathname } = new URL(req.url, `http://${req.headers.host}`);
 
-    if (pathname === '/ken-api/') {
+    if (pathname === '/') {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
